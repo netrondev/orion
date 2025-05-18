@@ -1,0 +1,9 @@
+[package]
+name = "bevy_piano_game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = "0.13"
+midir = "0.10"
+bevy_kira_audio = "0.18"
