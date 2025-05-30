@@ -4,7 +4,7 @@ use bevy::{app::PluginGroupBuilder, prelude::*};
 
 pub struct PianoPlugin;
 
-impl PluginGroup for HelloWorldPlugins {
+impl PluginGroup for PianoPlugin {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(PrintHelloPlugin)

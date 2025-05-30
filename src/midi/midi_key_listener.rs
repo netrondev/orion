@@ -14,7 +14,7 @@ pub enum MidiEvent {
 #[derive(Resource, Clone)]
 pub struct MidiReceiver(Arc<Mutex<Receiver<MidiEvent>>>);
 
-pub fn start_midi_listener(mut commands: Commands, // mut ev_levelup: EventWriter<LevelUpEvent>,
+pub fn midi_key_listener(mut commands: Commands, // mut ev_levelup: EventWriter<LevelUpEvent>,
 ) {
     let (tx, rx) = mpsc::channel();
     let rx = Arc::new(Mutex::new(rx));

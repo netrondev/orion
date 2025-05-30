@@ -10,11 +10,14 @@ use bevy::{
     window::{CursorGrabMode, PrimaryWindow},
 };
 
-use crate::{game::environment::EnvironmentPlugin, midi::piano::Piano};
+use crate::{
+    game::environment::EnvironmentPlugin,
+    midi::{bevy_plugin::PianoPlugin, piano::Piano},
+};
 
 pub fn start() {
     App::new()
-        .add_plugins((DefaultPlugins, EnvironmentPlugin))
+        .add_plugins((DefaultPlugins, EnvironmentPlugin, PianoPlugin))
         .add_systems(
             Startup,
             (
@@ -24,7 +27,7 @@ pub fn start() {
                 spawn_lights,
                 spawn_text,
                 crate::midi::game::spawn_midi_world,
-                crate::midi::bevy_resource::start_midi_listener,
+                crate::midi::midi_key_listener::midi_key_listener,
                 // capture_mouse_on_startup,
             ),
         )

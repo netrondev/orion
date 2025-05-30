@@ -1,16 +1,8 @@
 use bevy::{color::palettes::tailwind, prelude::*, render::view::RenderLayers};
 
-use crate::{
-    game::game_main::{CameraSensitivity, VIEW_MODEL_RENDER_LAYER},
-    midi,
-};
+use crate::game::game_main::{CameraSensitivity, VIEW_MODEL_RENDER_LAYER};
 
-use std::sync::{
-    mpsc::{self, Receiver},
-    Arc, Mutex,
-};
-
-use super::bevy_resource::MidiReceiver;
+use super::midi_key_listener::MidiReceiver;
 
 #[derive(Debug, Component, Default)]
 pub struct PianoKey {
@@ -21,21 +13,6 @@ pub struct PianoKey {
     pub key_width: f32,
     pub key_type: PianoKeyType,
 }
-
-// impl PianoKey {
-//     pub fn new(id: u8, key_height: f32, key_width: f32, key_type: PianoKeyType) -> Self {
-//         let thisthing = PianoKey {
-//             id,
-//             // note,
-//             // pressed: false,
-//             key_height,
-//             key_width,
-//             key_type,
-//         };
-
-//         thisthing
-//     }
-// }
 
 #[derive(Debug, Clone, Copy, Default)]
 pub enum PianoKeyType {
