@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = "0.13"
-midir = "0.10"
-bevy_kira_audio = "0.18"
+bevy = { version = "0.16.0" }
+bevy_egui = "0.34.1"
+bevy_mod_picking = "0.20.1"
+bevy_mod_billboard = "0.7.0"
+midir = "0.10.1"
+bevy_kira_audio = "0.23.0"
+tokio = { version = "1.43.0", features = ["full"] }
+rand = "0.9.1"
