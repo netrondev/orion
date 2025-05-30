@@ -12,3 +12,4 @@ midir = "0.10.1"
 bevy_kira_audio = "0.23.0"
 tokio = { version = "1.43.0", features = ["full"] }
 rand = "0.9.1"
+bevy_gizmos = "0.16.0"

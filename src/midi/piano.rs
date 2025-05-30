@@ -143,7 +143,7 @@ impl Piano {
     pub fn animate_midi(
         mut items: Query<(&mut Transform, &Name)>,
         time: Res<Time>,
-        midi: Res<MidiReceiver>,
+        // midi: Res<MidiReceiver>,
     ) -> Result {
         // println!("Animating piano keys {:#?}", items);
 
@@ -161,18 +161,18 @@ impl Piano {
     }
 }
 
-pub fn piano_create(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let number_of_keys = 15;
+// pub fn piano_create(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut materials: ResMut<Assets<StandardMaterial>>,
+// ) {
+//     let number_of_keys = 15;
 
-    for x in 0..number_of_keys {
-        commands.spawn((
-            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-            MeshMaterial3d(materials.add(Color::from(tailwind::RED_500))),
-            Transform::from_xyz(0.2 * x as f32, 0.10, 0.0).with_scale(Vec3::new(0.19, 0.1, -0.1)),
-        ));
-    }
-}
+//     for x in 0..number_of_keys {
+//         commands.spawn((
+//             Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
+//             MeshMaterial3d(materials.add(Color::from(tailwind::RED_500))),
+//             Transform::from_xyz(0.2 * x as f32, 0.10, 0.0).with_scale(Vec3::new(0.19, 0.1, -0.1)),
+//         ));
+//     }
+// }

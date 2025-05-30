@@ -2,36 +2,28 @@
 // and bevy_midi
 use bevy::{app::PluginGroupBuilder, prelude::*};
 
-pub struct PianoPlugin;
+use crate::midi::{game::spawn_midi_world, midi_key_listener::midi_key_listener};
 
-impl PluginGroup for PianoPlugin {
-    fn build(self) -> PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>()
-            .add(PrintHelloPlugin)
-            .add(PrintWorldPlugin)
-    }
-}
+pub struct PlayerPiano;
 
-struct PrintHelloPlugin;
-
-impl Plugin for PrintHelloPlugin {
+impl Plugin for PlayerPiano {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, print_hello_system);
+        app.add_systems(Startup, (midi_key_listener, spawn_midi_world));
     }
 }
 
-fn print_hello_system() {
-    info!("hello");
-}
+// fn print_hello_system() {
+//     info!("hello");
+// }
 
-struct PrintWorldPlugin;
+// struct PrintWorldPlugin;
 
-impl Plugin for PrintWorldPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, print_world_system);
-    }
-}
+// impl Plugin for PrintWorldPlugin {
+//     fn build(&self, app: &mut App) {
+//         app.add_systems(Update, print_world_system);
+//     }
+// }
 
-fn print_world_system() {
-    info!("world");
-}
+// fn print_world_system() {
+//     info!("world");
+// }

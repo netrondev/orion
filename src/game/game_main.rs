@@ -2,9 +2,14 @@ use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
     color::palettes::tailwind,
-    input::mouse::AccumulatedMouseMotion,
-    input::mouse::MouseButton,
-    input::ButtonInput,
+    core_pipeline::{
+        bloom::Bloom,
+        tonemapping::{DebandDither, Tonemapping},
+    },
+    input::{
+        mouse::{AccumulatedMouseMotion, MouseButton},
+        ButtonInput,
+    },
     prelude::*,
     render::view::RenderLayers,
     window::{CursorGrabMode, PrimaryWindow},
@@ -12,7 +17,7 @@ use bevy::{
 
 use crate::{
     game::environment::EnvironmentPlugin,
-    midi::{bevy_plugin::PianoPlugin, piano::Piano},
+    midi::{piano::Piano, PianoPlugin},
 };
 
 pub fn start() {
@@ -26,16 +31,14 @@ pub fn start() {
                 // spawn_world_model,
                 spawn_lights,
                 spawn_text,
-                crate::midi::game::spawn_midi_world,
-                crate::midi::midi_key_listener::midi_key_listener,
-                // capture_mouse_on_startup,
+                // capture_mouse_on_startup, // Uncomment to capture mouse on startup
             ),
         )
         .add_systems(
             Update,
             (
-                move_player,
-                move_player_wasd,
+                camera_mouse_look, // Uncomment to enable mouse look
+                camera_wasd,       // uncomment to enable WASD movement
                 change_fov,
                 release_mouse_on_esc,
                 relock_mouse_on_click,
@@ -122,6 +125,9 @@ fn spawn_view_model(
             order: 1,
             ..default()
         },
+        Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
+        Bloom::default(),           // 3. Enable bloom for the camera
+        DebandDither::Enabled,      // Optional: bloom causes gradients which cause banding
         Projection::from(PerspectiveProjection {
             fov: 70.0_f32.to_radians(),
             ..default()
@@ -161,7 +167,8 @@ fn spawn_text(mut commands: Commands) {
         )));
 }
 
-fn move_player(
+#[allow(dead_code)]
+fn camera_mouse_look(
     accumulated_mouse_motion: Res<AccumulatedMouseMotion>,
     player: Single<(&mut Transform, &CameraSensitivity), With<Player>>,
 ) {
@@ -181,7 +188,8 @@ fn move_player(
     }
 }
 
-fn move_player_wasd(
+#[allow(dead_code)]
+fn camera_wasd(
     input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     mut player: Single<&mut Transform, With<Player>>,
@@ -209,6 +217,22 @@ fn move_player_wasd(
         let speed = 3.0; // units per second
         transform.translation += move_dir * speed * time.delta_secs();
     }
+
+    if input.pressed(KeyCode::Escape) {
+        // exit
+        std::process::exit(0);
+    }
+
+    if input.just_pressed(KeyCode::F1) {
+        // reload the game
+
+        std::process::Command::new("cargo")
+            .arg("run")
+            .spawn()
+            .expect("Failed to restart the game");
+
+        std::process::exit(0);
+    }
 }
 
 fn change_fov(
@@ -231,6 +255,7 @@ fn change_fov(
     }
 }
 
+#[allow(dead_code)]
 fn capture_mouse_on_startup(mut windows: Query<&mut Window, With<PrimaryWindow>>) {
     if let Ok(mut window) = windows.single_mut() {
         window.cursor_options.grab_mode = CursorGrabMode::Locked;
