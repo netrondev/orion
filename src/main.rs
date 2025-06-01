@@ -18,6 +18,8 @@ mod audio;
 
 mod keys;
 
+mod synth;
+
 fn main() {
     // keys::main();
 
