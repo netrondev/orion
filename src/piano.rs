@@ -16,13 +16,32 @@ pub struct PlayerPiano;
 
 impl Plugin for PlayerPiano {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (shapes, midi_key_listener, spawn_view_model))
-            .add_systems(Update, configure_ui);
+        app.add_systems(
+            Startup,
+            (setup, create_text, piano_spawn, midi_key_listener),
+        )
+        .add_systems(Update, configure_ui);
     }
 }
 
+fn setup(mut commands: Commands) {
+    commands.spawn(PianoDebug);
+}
+
+fn create_text(mut commands: Commands) {
+    commands.spawn((
+        Text::default(),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(12.0),
+            left: Val::Px(12.0),
+            ..default()
+        },
+    ));
+}
+
 #[hot(rerun_on_hot_patch = true)]
-fn shapes(
+fn piano_spawn(
     previous_setup: Query<Entity, With<PianoKeyComponent>>,
     mut commands: Commands,
     meshes: ResMut<Assets<Mesh>>,
@@ -37,28 +56,52 @@ fn shapes(
     Piano::new(15).spawn(commands, meshes, materials);
 }
 
+// fn spawn_view_model(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     // mut materials: ResMut<Assets<StandardMaterial>>,
+//     mut materials: ResMut<Assets<ColorMaterial>>,
+// ) {
+//     Piano::new(15).spawn(commands, meshes, materials);
+// }
+
 #[derive(Component)]
 #[require(Node)]
-struct Ui;
+struct PianoDebug;
 
 #[hot]
-fn configure_ui(ui: Single<Entity, With<Ui>>, mut commands: Commands) {
-    commands.entity(*ui).despawn_related::<Children>().insert((
+fn configure_ui(previous_setup: Query<Entity, With<PianoDebug>>, mut commands: Commands) {
+    for entity in previous_setup.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    // commands.entity(*ui).despawn_related::<Children>().insert((
+    //     Node {
+    //         // You can change the `Node` however you want at runtime
+    //         position_type: PositionType::Absolute,
+    //         width: Val::Percent(100.0),
+    //         height: Val::Percent(100.0),
+    //         align_items: AlignItems::Center,
+    //         justify_content: JustifyContent::Center,
+    //         flex_direction: FlexDirection::Column,
+    //         row_gap: Val::Px(20.0),
+    //         ..default()
+    //     },
+    //     children![
+    //         Text::new("Hello, world!"),
+    //         Text::new("Try adding new texts below"),
+    //     ],
+    // ));
+
+    commands.spawn((
+        PianoDebug,
+        Text::new("piano debug 12"),
         Node {
-            // You can change the `Node` however you want at runtime
             position_type: PositionType::Absolute,
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            flex_direction: FlexDirection::Column,
-            row_gap: Val::Px(20.0),
+            top: Val::Px(12.0),
+            left: Val::Px(12.0),
             ..default()
         },
-        children![
-            Text::new("Hello, world!"),
-            Text::new("Try adding new texts below"),
-        ],
     ));
 }
 
@@ -70,9 +113,7 @@ pub enum MidiEvent {
 #[derive(Resource, Clone)]
 pub struct MidiReceiver(Arc<Mutex<Receiver<MidiEvent>>>);
 
-pub fn midi_key_listener(
-    mut commands: Commands, // mut ev_levelup: EventWriter<LevelUpEvent>,
-    mut text: Single<&mut Text>,
+pub fn midi_key_listener(mut commands: Commands, // mut ev_levelup: EventWriter<LevelUpEvent>,
 ) {
     let (tx, rx) = mpsc::channel();
     let rx = Arc::new(Mutex::new(rx));
@@ -118,15 +159,6 @@ pub fn midi_key_listener(
         }
     });
     commands.insert_resource(MidiReceiver(rx));
-}
-
-fn spawn_view_model(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    Piano::new(15).spawn(commands, meshes, materials);
 }
 
 #[derive(Component)]
@@ -236,8 +268,6 @@ impl Piano {
         for key in self.keys.iter() {
             let x = (self.key_spacing * key.id as f32
                 - (self.key_spacing * self.number_of_keys as f32 / 2.0));
-
-            info!("Spawning piano key {:#?} at x: {}", key, x);
 
             match key.key_type {
                 PianoKeyType::White => {
