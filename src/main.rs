@@ -1,6 +1,10 @@
 use bevy::{pbr::AmbientLight, prelude::*};
 mod bevy_midi;
+mod piano;
+
 use bevy_midi::prelude::*;
+use bevy_simple_subsecond_system::prelude::*;
+use piano::{Piano, PianoKeyComponent};
 
 fn main() {
     App::new()
@@ -10,11 +14,15 @@ fn main() {
             ..default()
         })
         .add_plugins(DefaultPlugins)
+        // HOT RELOAD
+        .add_plugins(SimpleSubsecondPlugin::default())
+        // MIDI
         .add_plugins(MidiInputPlugin)
         .init_resource::<MidiInputSettings>()
         .add_plugins(MidiOutputPlugin)
         .init_resource::<MidiOutputSettings>()
-        .add_systems(Startup, setup)
+        // STARTUP
+        .add_systems(Startup, (setup, create_piano))
         .add_systems(
             Update,
             (
@@ -84,6 +92,28 @@ fn setup(
         spawn_note(&mut cmds, &b_mat, 1.31, pos_black, &mut black_key, i, "A#/Bb");
         spawn_note(&mut cmds, &w_mat, 1.46, pos, &mut white_key_2, i, "B");
     }
+
+    // My Piano
+
+
+
+}
+
+#[hot(rerun_on_hot_patch = true)]
+fn create_piano(
+    previous_setup: Query<Entity, With<PianoKeyComponent>>,
+    mut commands: Commands,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<ColorMaterial>>,
+) {
+    // Clear all entities that were spawned on `Startup` so that
+    // hot-patching does not spawn them again
+
+    for entity in previous_setup.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    Piano::new(15).spawn(commands, meshes, materials);
 }
 
 fn spawn_note(
@@ -128,6 +158,8 @@ fn handle_midi_input(
     query: Query<(Entity, &Key)>,
 ) {
     for data in midi_events.read() {
+        info!("MIDI event: {:?}", data.message);
+
         let [_, index, _value] = data.message.msg;
         let off = index % 12;
         let oct = index.overflowing_div(12).0;
