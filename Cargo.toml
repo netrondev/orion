@@ -1,15 +1,25 @@
 [package]
-name = "bevy_piano_game"
+name = "orion_v3"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-bevy = { version = "0.16.0" }
-bevy_egui = "0.34.1"
-bevy_mod_picking = "0.20.1"
-bevy_mod_billboard = "0.7.0"
+bevy = "0.16.1"
+bevy_simple_subsecond_system = { git = "https://github.com/TheBevyFlock/bevy_simple_subsecond_system", version = "0.2.0" }
 midir = "0.10.1"
-bevy_kira_audio = "0.23.0"
-tokio = { version = "1.43.0", features = ["full"] }
-rand = "0.9.1"
-bevy_gizmos = "0.16.0"
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
