@@ -34,16 +34,60 @@ pub struct SynthEngine {
     pub waveform: Waveform,
     pub filter: Filter,
     pub vibrato_amount: f64,
+
+    /// Chorus amount.
+    chorus_amount: Shared,
+    /// Reverb amount.
+    reverb_amount: Shared,
+    /// Reverb room size.
+    room_size: f64,
+    /// Reverb time in seconds.
+    reverb_time: f64,
+    /// Reverb diffusion.
+    reverb_diffusion: f64,
+    /// Reverb node ID.
+    // reverb_id: NodeId,
+    /// Phaser node ID.
+    // phaser_id: NodeId,
+    /// Phaser state.
+    phaser_enabled: bool,
+    /// Flanger node ID.
+    flanger_id: NodeId,
+    /// Flanger state.
+    flanger_enabled: bool,
+    /// Left channel data for the oscilloscope.
+    snoop0: Snoop,
+    /// Right channel data for the oscilloscope.
+    snoop1: Snoop,
 }
 
 impl SynthEngine {
     pub fn new() -> Self {
+        let room_size = 10.0;
+        let reverb_amount = shared(0.25);
+        let reverb_time = 2.0;
+        let reverb_diffusion = 0.5;
+        let chorus_amount = shared(1.0);
+
+        let (snoop0, snoop_backend0) = snoop(32768);
+        let (snoop1, snoop_backend1) = snoop(32768);
+
         Self {
             rnd: Rnd::from_u64(0),
             sequencer: Sequencer::new(false, 1),
-            waveform: Waveform::Saw,
+            waveform: Waveform::Organ,
             filter: Filter::None,
             vibrato_amount: 0.25,
+            chorus_amount,
+            reverb_amount,
+            room_size,
+            reverb_time,
+            reverb_diffusion,
+            snoop0,
+            snoop1,
+            phaser_enabled: false,
+            flanger_id: NodeId::new(),
+            flanger_enabled: false,
         }
     }
 
@@ -107,8 +151,9 @@ impl SynthEngine {
         };
         let mut note = Box::new(waveform >> filter >> dcblock());
         note.ping(false, AttoHash::new(self.rnd.u64()));
+
         self.sequencer
-            .push_relative(0.0, f64::INFINITY, Fade::Smooth, 0.02, 0.2, note);
+            .push_relative(0.0, 2.0, Fade::Smooth, 0.03, 2.0, note);
     }
 
     pub fn note_off(&mut self, midi_note: u8) {
