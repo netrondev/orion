@@ -1,9 +1,11 @@
 use bevy::{pbr::AmbientLight, prelude::*};
-mod bevy_midi;
-mod piano;
 
-use bevy_midi::prelude::*;
 use bevy_simple_subsecond_system::prelude::*;
+
+mod bevy_midi;
+use bevy_midi::prelude::*;
+
+mod piano;
 use piano::{Piano, PianoKeyComponent};
 
 fn main() {
@@ -52,6 +54,8 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     let mid = -6.3;
+
+    
 
     // light
     cmds.spawn((
@@ -159,6 +163,18 @@ fn handle_midi_input(
 ) {
     for data in midi_events.read() {
         info!("MIDI event: {:?}", data.message);
+        match data.message.msg[0] {
+            156 => {
+                info!("MIDI event: Note On");
+                // play_sound(data.message.msg[1] as f32 * 8.0);
+            }
+            140 => {
+                info!("MIDI event: Note Off");
+            }
+            _ => {
+                info!("MIDI event: Unknown message type");
+            }
+        }
 
         let [_, index, _value] = data.message.msg;
         let off = index % 12;
