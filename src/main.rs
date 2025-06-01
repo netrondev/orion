@@ -1,3 +1,5 @@
+use std::thread;
+
 use bevy::{pbr::AmbientLight, prelude::*};
 
 use bevy_simple_subsecond_system::prelude::*;
@@ -14,7 +16,11 @@ use crate::audio::PianoPlugin;
 
 mod audio;
 
+mod keys;
+
 fn main() {
+    // keys::main();
+
     App::new()
         .insert_resource(AmbientLight {
             color: Color::WHITE,
