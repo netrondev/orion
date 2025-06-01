@@ -5,7 +5,9 @@ edition = "2024"
 
 [dependencies]
 bevy = "0.16.1"
+bevy_mod_picking = "0.20.1"
 bevy_simple_subsecond_system = { git = "https://github.com/TheBevyFlock/bevy_simple_subsecond_system", version = "0.2.0" }
+crossbeam-channel = "0.5.15"
 midir = "0.10.1"
 
 [profile]
