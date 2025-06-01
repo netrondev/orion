@@ -8,8 +8,11 @@ use bevy_midi::prelude::*;
 mod piano;
 use piano::{Piano, PianoKeyComponent};
 
-mod bevy_fundsp;
-use bevy_fundsp::DspPlugin;
+use bevy_procedural_audio::prelude::*;
+
+use crate::audio::PianoPlugin;
+
+mod audio;
 
 fn main() {
     App::new()
@@ -24,6 +27,7 @@ fn main() {
         .add_plugins(SimpleSubsecondPlugin::default())
         // MIDI
         .add_plugins(MidiInputPlugin)
+        .add_plugins(PianoPlugin)
         .init_resource::<MidiInputSettings>()
         .add_plugins(MidiOutputPlugin)
         .init_resource::<MidiOutputSettings>()
@@ -33,7 +37,6 @@ fn main() {
             Update,
             (
                 handle_midi_input,
-                handle_midi_input_audio,
                 connect_to_first_input_port,
                 connect_to_first_output_port,
                 display_press,
@@ -185,28 +188,6 @@ fn handle_midi_input(
                 }
             }
         } else {
-        }
-    }
-}
-
-fn handle_midi_input_audio(
-    mut commands: Commands,
-    mut midi_events: EventReader<MidiData>,
-    query: Query<(Entity, &Key)>,
-) {
-    for data in midi_events.read() {
-        info!("MIDI event: {:?}", data.message);
-        match data.message.msg[0] {
-            156 => {
-                info!("MIDI event: Note On");
-                // play_sound(data.message.msg[1] as f32 * 8.0);
-            }
-            140 => {
-                info!("MIDI event: Note Off");
-            }
-            _ => {
-                info!("MIDI event: Unknown message type");
-            }
         }
     }
 }
