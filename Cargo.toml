@@ -7,8 +7,11 @@ edition = "2024"
 bevy = "0.16.1"
 bevy_simple_subsecond_system = { git = "https://github.com/TheBevyFlock/bevy_simple_subsecond_system", version = "0.2.0" }
 crossbeam-channel = "0.5.15"
+fundsp = "0.20.0"
 midir = "0.10.1"
+once_cell = "1.21.3"
 rodio = "0.20.1"
+uuid = { version = "1.17.0", features = ["v5"] }
 
 [profile]
 

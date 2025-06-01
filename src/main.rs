@@ -8,6 +8,9 @@ use bevy_midi::prelude::*;
 mod piano;
 use piano::{Piano, PianoKeyComponent};
 
+mod bevy_fundsp;
+use bevy_fundsp::DspPlugin;
+
 fn main() {
     App::new()
         .insert_resource(AmbientLight {
@@ -16,6 +19,7 @@ fn main() {
             ..default()
         })
         .add_plugins(DefaultPlugins)
+        .add_plugins(DspPlugin::default())
         // HOT RELOAD
         .add_plugins(SimpleSubsecondPlugin::default())
         // MIDI
@@ -29,6 +33,7 @@ fn main() {
             Update,
             (
                 handle_midi_input,
+                handle_midi_input_audio,
                 connect_to_first_input_port,
                 connect_to_first_output_port,
                 display_press,
@@ -162,20 +167,6 @@ fn handle_midi_input(
     query: Query<(Entity, &Key)>,
 ) {
     for data in midi_events.read() {
-        info!("MIDI event: {:?}", data.message);
-        match data.message.msg[0] {
-            156 => {
-                info!("MIDI event: Note On");
-                // play_sound(data.message.msg[1] as f32 * 8.0);
-            }
-            140 => {
-                info!("MIDI event: Note Off");
-            }
-            _ => {
-                info!("MIDI event: Unknown message type");
-            }
-        }
-
         let [_, index, _value] = data.message.msg;
         let off = index % 12;
         let oct = index.overflowing_div(12).0;
@@ -194,6 +185,28 @@ fn handle_midi_input(
                 }
             }
         } else {
+        }
+    }
+}
+
+fn handle_midi_input_audio(
+    mut commands: Commands,
+    mut midi_events: EventReader<MidiData>,
+    query: Query<(Entity, &Key)>,
+) {
+    for data in midi_events.read() {
+        info!("MIDI event: {:?}", data.message);
+        match data.message.msg[0] {
+            156 => {
+                info!("MIDI event: Note On");
+                // play_sound(data.message.msg[1] as f32 * 8.0);
+            }
+            140 => {
+                info!("MIDI event: Note Off");
+            }
+            _ => {
+                info!("MIDI event: Unknown message type");
+            }
         }
     }
 }
