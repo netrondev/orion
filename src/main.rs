@@ -1,6 +1,5 @@
 use bevy::{pbr::AmbientLight, prelude::*};
 use bevy_simple_subsecond_system::prelude::*;
-use std::thread;
 mod bevy_midi;
 use bevy_midi::prelude::*;
 mod piano;
@@ -9,8 +8,8 @@ use bevy_procedural_audio::prelude::*;
 use piano::{Piano, PianoKeyComponent};
 mod audio;
 mod keys;
+mod mic;
 mod synth;
-mod ui;
 
 fn main() {
     // keys::main();
@@ -32,7 +31,7 @@ fn main() {
         .add_plugins(MidiOutputPlugin)
         .init_resource::<MidiOutputSettings>()
         // STARTUP
-        .add_systems(Startup, (setup, create_piano, ui::ui_system_startup))
+        .add_systems(Startup, (setup, create_piano, mic::ui_system_startup))
         // UPDATE
         .add_systems(
             Update,
@@ -42,7 +41,7 @@ fn main() {
                 connect_to_first_output_port,
                 display_press,
                 display_release,
-                ui::ui_system_update_button,
+                mic::ui_system_update_button,
             ),
         )
         .run();
