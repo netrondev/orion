@@ -75,8 +75,8 @@ impl SynthEngine {
         Self {
             rnd: Rnd::from_u64(0),
             sequencer: Sequencer::new(false, 1),
-            waveform: Waveform::Organ,
-            filter: Filter::None,
+            waveform: Waveform::Sine,
+            filter: Filter::Butterworth,
             vibrato_amount: 0.25,
             chorus_amount,
             reverb_amount,
@@ -152,8 +152,10 @@ impl SynthEngine {
         let mut note = Box::new(waveform >> filter >> dcblock());
         note.ping(false, AttoHash::new(self.rnd.u64()));
 
+        let duration = 0.5 + (velocity as f64 / 127.0) * 5.0;
+
         self.sequencer
-            .push_relative(0.0, 2.0, Fade::Smooth, 0.03, 2.0, note);
+            .push_relative(0.0, duration, Fade::Smooth, 0.03, duration, note);
     }
 
     pub fn note_off(&mut self, midi_note: u8) {
