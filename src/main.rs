@@ -42,7 +42,7 @@ fn main() {
         // Add RecordingState resource
         .insert_resource(micamp)
         .insert_resource(audio_buffer)
-        .init_resource::<mic::RecordingState>()
+        // .init_resource::<mic::RecordingState>()
         // STARTUP
         .add_systems(Startup, (setup, create_piano, mic::ui_system_startup))
         // UPDATE
@@ -54,8 +54,8 @@ fn main() {
                 connect_to_first_output_port,
                 display_press,
                 display_release,
-                mic::ui_system_update_button,
-                mic::mic_update,
+                // mic::ui_system_update_button,
+                // mic::mic_update,
             ),
         )
         .run();
