@@ -1,18 +1,25 @@
+use std::sync::{Arc, Mutex};
+
 use bevy::{pbr::AmbientLight, prelude::*};
 use bevy_simple_subsecond_system::prelude::*;
 mod bevy_midi;
 use bevy_midi::prelude::*;
 mod piano;
-use crate::audio::PianoPlugin;
 use bevy_procedural_audio::prelude::*;
 use piano::{Piano, PianoKeyComponent};
 mod audio;
+mod bevy_mic;
 mod keys;
 mod mic;
 mod synth;
 
 fn main() {
     // keys::main();
+
+    let synth_mutex = Arc::new(Mutex::new(0.0f32));
+    let micamp = mic::MicAmplitude(synth_mutex.clone());
+
+    let audio_buffer = mic::AudioBuffer(Arc::new(Mutex::new(Vec::new())));
 
     App::new()
         .insert_resource(AmbientLight {
@@ -26,10 +33,15 @@ fn main() {
         .add_plugins(SimpleSubsecondPlugin::default())
         // MIDI
         .add_plugins(MidiInputPlugin)
-        .add_plugins(PianoPlugin)
+        .add_plugins(bevy_mic::ModAudioPlugins)
+        .add_plugins(audio::PianoPlugin)
         .init_resource::<MidiInputSettings>()
         .add_plugins(MidiOutputPlugin)
         .init_resource::<MidiOutputSettings>()
+        // Add RecordingState resource
+        .insert_resource(micamp)
+        .insert_resource(audio_buffer)
+        .init_resource::<mic::RecordingState>()
         // STARTUP
         .add_systems(Startup, (setup, create_piano, mic::ui_system_startup))
         // UPDATE
@@ -42,6 +54,7 @@ fn main() {
                 display_press,
                 display_release,
                 mic::ui_system_update_button,
+                mic::mic_update,
             ),
         )
         .run();

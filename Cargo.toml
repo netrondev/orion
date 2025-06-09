@@ -14,9 +14,11 @@ bevy_simple_subsecond_system = { git = "https://github.com/TheBevyFlock/bevy_sim
 cpal = "0.15.3"
 crossbeam-channel = "0.5.15"
 eframe = "0.31.1"
+flume = "0.11.1"
 fundsp = "0.20.0"
 midir = "0.10.1"
 once_cell = "1.21.3"
+realfft = "3.4.0"
 rodio = "0.20.1"
 uuid = { version = "1.17.0", features = ["v5"] }
 
