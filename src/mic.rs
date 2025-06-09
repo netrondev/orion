@@ -17,7 +17,10 @@ pub struct RecordingState {
 }
 
 #[derive(Component)]
-pub struct VolumeBar;
+pub struct VolumeBar {
+    id: usize,
+    frequency: f64,
+}
 
 #[derive(Resource, Default)]
 pub struct MicAmplitude(pub Arc<Mutex<f32>>);
@@ -26,31 +29,6 @@ pub struct MicAmplitude(pub Arc<Mutex<f32>>);
 pub struct AudioBuffer(pub Arc<Mutex<Vec<f32>>>);
 
 static mut MIC_STREAM: Option<cpal::Stream> = None;
-
-fn detect_frequencies(samples: &[f32], sample_rate: usize) -> Vec<f32> {
-    let mut planner = RealFftPlanner::<f32>::new();
-    let fft = planner.plan_fft_forward(samples.len());
-    let mut spectrum = fft.make_output_vec();
-    let mut buffer = samples.to_vec();
-    fft.process(&mut buffer, &mut spectrum).unwrap();
-
-    // Convert bin to frequency
-    let frequencies = spectrum
-        .iter()
-        .enumerate()
-        .map(|(i, c)| {
-            let freq = i as f32 * sample_rate as f32 / samples.len() as f32;
-            (freq, c.norm())
-        })
-        .collect::<Vec<_>>();
-
-    // Return top dominant frequencies
-    frequencies
-        .into_iter()
-        .filter(|(_, amp)| *amp > 0.1)
-        .map(|(f, _)| f)
-        .collect()
-}
 
 fn start_microphone_stream<F: FnMut(&[f32]) + Send + 'static>(
     mut callback: F,
@@ -174,19 +152,27 @@ pub fn ui_system_startup(mut commands: Commands, assets: Res<AssetServer>) {
     // ui camera
     commands.spawn(button(&assets)).observe(on_click_spawn_cube);
 
-    // Volume bar
-    commands.spawn((
-        Node {
-            width: Val::Px(100.0), // start at 0, will be updated
-            height: Val::Px(30.0),
-            position_type: PositionType::Absolute,
-            top: Val::Px(10.0),
-            left: Val::Px(10.0),
-            ..Default::default()
-        },
-        BackgroundColor(Color::srgb(0.0, 1.0, 0.0)),
-        VolumeBar,
-    ));
+    for idx in 1..1025 {
+        // Volume bar
+
+        let height = idx as f32 / 100.0;
+
+        commands.spawn((
+            Node {
+                width: Val::Px(1.0), // start at 0, will be updated
+                height: Val::Px(height),
+                position_type: PositionType::Absolute,
+                top: Val::Px(20.0 - height),
+                left: Val::Px((10.0 + idx as f64 / 10.0) as f32),
+                ..Default::default()
+            },
+            BackgroundColor(Color::srgb(idx as f32 / 1024.0, 1024.0 / idx as f32, 0.0)),
+            VolumeBar {
+                id: idx,
+                frequency: idx as f64 / (48000.0 / 2.0 + 1.0),
+            },
+        ));
+    }
 }
 
 fn button(asset_server: &AssetServer) -> impl Bundle + use<> {
@@ -280,14 +266,27 @@ pub fn update_volume_bar_ui(
 pub fn mic_update(
     // sink: Single<&mut bevy_mic::spatial_audio::SpatialAudioSink>,
     mic: Res<crate::bevy_mic::microphone::MicrophoneAudio>,
-    mut query: Single<&mut Node, With<VolumeBar>>,
+    // mut query: Single<&mut Node, With<VolumeBar>>,
+    mut query: Query<(&mut Node, &VolumeBar)>,
 ) {
-    info!("mic count: {}", mic.len());
+    // info!("mic count: {}", mic.len());
 
     for owo in mic.try_iter() {
-        let max = owo.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+        let frequencies = detect_frequencies(&owo, 48000);
+
+        // let max = owo.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
         // info!("{}", max);
-        query.width = Val::Px(100.0 * max);
+        // query.width = Val::Px(100.0 * max);
+
+        for (mut volbar, voldata) in query.iter_mut() {
+            let freqency = frequencies.get(voldata.id);
+            if let Some(freq) = freqency {
+                let height = (freq.1 * 10.0).max(1.0);
+
+                volbar.height = Val::Px(height);
+                volbar.top = Val::Px(20.0 - height);
+            };
+        }
 
         // sink.append(rodio::buffer::SamplesBuffer::new(
         //     mic.config.channels,
@@ -295,4 +294,24 @@ pub fn mic_update(
         //     owo,
         // ));
     }
+}
+
+fn detect_frequencies(samples: &[f32], sample_rate: usize) -> Vec<(f32, f32)> {
+    let mut planner = RealFftPlanner::<f32>::new();
+    let fft = planner.plan_fft_forward(samples.len());
+    let mut spectrum = fft.make_output_vec();
+    let mut buffer = samples.to_vec();
+    fft.process(&mut buffer, &mut spectrum).unwrap();
+
+    // Convert bin to frequency
+    let frequencies = spectrum
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let freq = i as f32 * sample_rate as f32 / samples.len() as f32;
+            (freq, c.norm())
+        })
+        .collect::<Vec<_>>();
+
+    frequencies
 }
