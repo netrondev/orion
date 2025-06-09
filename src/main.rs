@@ -11,8 +11,8 @@ mod audio;
 mod bevy_mic;
 mod keys;
 mod mic;
+mod record_visualizer;
 mod synth;
-
 fn main() {
     // keys::main();
 
@@ -36,6 +36,7 @@ fn main() {
         .add_plugins(bevy_mic::ModAudioPlugins)
         .add_plugins(audio::PianoPlugin)
         .init_resource::<MidiInputSettings>()
+        .add_plugins(record_visualizer::RecordVisualizerPlugin)
         .add_plugins(MidiOutputPlugin)
         .init_resource::<MidiOutputSettings>()
         // Add RecordingState resource
