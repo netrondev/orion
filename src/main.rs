@@ -12,6 +12,7 @@ mod bevy_mic;
 mod keys;
 mod mic;
 mod record_visualizer;
+mod songs;
 mod synth;
 fn main() {
     // keys::main();
