@@ -205,7 +205,7 @@ fn button(asset_server: &AssetServer) -> impl Bundle + use<> {
             children![(
                 Text::new("Record"),
                 TextFont {
-                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                    // font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                     font_size: 33.0,
                     ..default()
                 },

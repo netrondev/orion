@@ -1,7 +1,9 @@
-use std::sync::{Arc, Mutex};
-
-use bevy::{pbr::AmbientLight, prelude::*};
+use bevy::{math::VectorSpace, pbr::AmbientLight, prelude::*};
 use bevy_simple_subsecond_system::prelude::*;
+use std::{
+    f32::consts::{self, FRAC_PI_2},
+    sync::{Arc, Mutex},
+};
 mod bevy_midi;
 use bevy_midi::prelude::*;
 mod piano;
@@ -9,11 +11,14 @@ use bevy_procedural_audio::prelude::*;
 use piano::{Piano, PianoKeyComponent};
 mod audio;
 mod bevy_mic;
+pub mod gizmo;
 mod keys;
 mod mic;
 mod record_visualizer;
 mod songs;
 mod synth;
+use bevy_text_mesh::prelude::*;
+
 fn main() {
     // keys::main();
 
@@ -28,7 +33,13 @@ fn main() {
             brightness: 1.0 / 5.0f32,
             ..default()
         })
-        .add_plugins(DefaultPlugins)
+        // PLUGINS
+        .add_plugins(DefaultPlugins.set(AssetPlugin {
+            file_path: "/home/rouan/work/orion/assets".to_string(),
+            unapproved_path_mode: bevy_asset::UnapprovedPathMode::Allow,
+            ..default()
+        }))
+        .add_plugins(TextMeshPlugin)
         .add_plugins(DspPlugin::default())
         // HOT RELOAD
         .add_plugins(SimpleSubsecondPlugin::default())
@@ -36,16 +47,24 @@ fn main() {
         .add_plugins(MidiInputPlugin)
         .add_plugins(bevy_mic::ModAudioPlugins)
         .add_plugins(audio::PianoPlugin)
-        .init_resource::<MidiInputSettings>()
         .add_plugins(record_visualizer::RecordVisualizerPlugin)
         .add_plugins(MidiOutputPlugin)
+        .init_resource::<MidiInputSettings>()
         .init_resource::<MidiOutputSettings>()
         // Add RecordingState resource
         .insert_resource(micamp)
         .insert_resource(audio_buffer)
         // .init_resource::<mic::RecordingState>()
         // STARTUP
-        .add_systems(Startup, (setup, create_piano, mic::ui_system_startup))
+        .add_systems(
+            Startup,
+            (
+                setup,
+                // create_piano,
+                mic::ui_system_startup,
+                gizmo::create_gizmo,
+            ),
+        )
         // UPDATE
         .add_systems(
             Update,
@@ -71,15 +90,28 @@ struct Key {
 #[derive(Component)]
 struct PressedKey;
 
+enum NoteType {
+    White,
+    Black,
+}
+
 #[rustfmt::skip]
+#[hot(rerun_on_hot_patch = true)]
 fn setup(
     mut cmds: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
-) {
-    let mid = -6.3;
+    mut meshes: ResMut<Assets<Mesh>>,
+        previous_setup: Query<Entity, With<Key>>,
 
-    
+) {
+
+    for entity in previous_setup.iter() {
+        cmds.entity(entity).despawn();
+    }
+
+    let mid = -6.3;   
 
     // light
     cmds.spawn((
@@ -96,60 +128,66 @@ fn setup(
 
     let pos: Vec3 = Vec3::new(0., 0., 0.);
 
-    let mut black_key: Handle<Mesh> = asset_server.load("models/black_key.gltf#Mesh0/Primitive0");
+    let mut black_key: Handle<Mesh> = asset_server.load(GltfAssetLabel::Primitive { mesh: 0, primitive: 0 }.from_asset("models/black_key.gltf"));
     let mut white_key_0: Handle<Mesh> = asset_server.load("models/white_key_0.gltf#Mesh0/Primitive0");
     let mut white_key_1: Handle<Mesh> = asset_server.load("models/white_key_1.gltf#Mesh0/Primitive0");
     let mut white_key_2: Handle<Mesh> = asset_server.load("models/white_key_2.gltf#Mesh0/Primitive0");
-    let b_mat = materials.add(Color::srgb(0.1, 0.1, 0.1));
-    let w_mat = materials.add(Color::srgb(1.0, 1.0, 1.0));
+    let b_mat = standard_materials.add(Color::srgb(0.1, 0.1, 0.1));
+    let w_mat = standard_materials.add(Color::srgb(1.0, 1.0, 1.0));
 
     //Create keyboard layout
     let pos_black = pos + Vec3::new(0., 0.06, 0.);
 
     for i in 0..8 {
-        spawn_note(&mut cmds, &w_mat, 0.00, pos, &mut white_key_0, i, "C");
-        spawn_note(&mut cmds, &b_mat, 0.15, pos_black, &mut black_key, i, "C#/Db");
-        spawn_note(&mut cmds, &w_mat, 0.27, pos, &mut white_key_1, i, "D");
-        spawn_note(&mut cmds, &b_mat, 0.39, pos_black, &mut black_key, i, "D#/Eb");
-        spawn_note(&mut cmds, &w_mat, 0.54, pos, &mut white_key_2, i, "E");
-        spawn_note(&mut cmds, &w_mat, 0.69, pos, &mut white_key_0, i, "F");
-        spawn_note(&mut cmds, &b_mat, 0.85, pos_black, &mut black_key, i, "F#/Gb");
-        spawn_note(&mut cmds, &w_mat, 0.96, pos, &mut white_key_1, i, "G");
-        spawn_note(&mut cmds, &b_mat, 1.08, pos_black, &mut black_key, i, "G#/Ab");
-        spawn_note(&mut cmds, &w_mat, 1.19, pos, &mut white_key_1, i, "A");
-        spawn_note(&mut cmds, &b_mat, 1.31, pos_black, &mut black_key, i, "A#/Bb");
-        spawn_note(&mut cmds, &w_mat, 1.46, pos, &mut white_key_2, i, "B");
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 0.00, pos, &mut white_key_0, i, "C", &asset_server, NoteType::White);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &b_mat, 0.15, pos_black, &mut black_key, i, "C#/Db", &asset_server , NoteType::Black);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 0.27, pos, &mut white_key_1, i, "D", &asset_server , NoteType::White);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &b_mat, 0.39, pos_black, &mut black_key, i, "D#/Eb", &asset_server , NoteType::Black);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 0.54, pos, &mut white_key_2, i, "E", &asset_server , NoteType::White);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 0.69, pos, &mut white_key_0, i, "F", &asset_server , NoteType::White);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &b_mat, 0.85, pos_black, &mut black_key, i, "F#/Gb", &asset_server , NoteType::Black);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 0.96, pos, &mut white_key_1, i, "G", &asset_server , NoteType::White);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &b_mat, 1.08, pos_black, &mut black_key, i, "G#/Ab", &asset_server , NoteType::Black);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 1.19, pos, &mut white_key_1, i, "A", &asset_server , NoteType::White);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &b_mat, 1.31, pos_black, &mut black_key, i, "A#/Bb", &asset_server , NoteType::Black);
+        spawn_note(&mut cmds, &mut meshes, &mut standard_materials,  &w_mat, 1.46, pos, &mut white_key_2, i, "B", &asset_server , NoteType::White);
     }
 
     // My Piano
 }
 
-#[hot(rerun_on_hot_patch = true)]
-fn create_piano(
-    previous_setup: Query<Entity, With<PianoKeyComponent>>,
-    mut commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<ColorMaterial>>,
-) {
-    // Clear all entities that were spawned on `Startup` so that
-    // hot-patching does not spawn them again
+// #[hot(rerun_on_hot_patch = true)]
+// fn create_piano(
+//     previous_setup: Query<Entity, With<PianoKeyComponent>>,
+//     mut commands: Commands,
+//     meshes: ResMut<Assets<Mesh>>,
+//     materials: ResMut<Assets<ColorMaterial>>,
+// ) {
+//     // Clear all entities that were spawned on `Startup` so that
+//     // hot-patching does not spawn them again
 
-    for entity in previous_setup.iter() {
-        commands.entity(entity).despawn();
-    }
+//     for entity in previous_setup.iter() {
+//         commands.entity(entity).despawn();
+//     }
 
-    Piano::new(15).spawn(commands, meshes, materials);
-}
+//     Piano::new(15).spawn(commands, meshes, materials);
+// }
 
 fn spawn_note(
     commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    standard_materials: &mut ResMut<Assets<StandardMaterial>>,
     mat: &Handle<StandardMaterial>,
     offset_z: f32,
     pos: Vec3,
     asset: &mut Handle<Mesh>,
     oct: i32,
     key: &str,
+    asset_server: &Res<AssetServer>,
+    note_type: NoteType,
 ) {
+    let font: Handle<TextMeshFont> = asset_server.load("fonts/FiraSans-Medium.ttf");
+
     commands.spawn((
         Mesh3d(asset.clone()),
         MeshMaterial3d(mat.clone()),
@@ -162,6 +200,37 @@ fn spawn_note(
             key_val: format!("{}{}", key, oct),
             y_reset: pos.y,
         },
+        children![
+            (TextMeshBundle {
+                text_mesh: TextMesh {
+                    text: String::from(key),
+                    style: TextMeshStyle {
+                        font: font.clone(),
+                        font_size: SizeUnit::NonStandard(1.),
+
+                        color: match note_type {
+                            NoteType::White => Color::srgb(0.0, 0.5, 0.0),
+                            NoteType::Black => Color::srgb(0.5, 0.0, 0.0),
+                        },
+                        ..Default::default()
+                    },
+                    size: TextMeshSize {
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                // transform: Transform {
+                //     translation: Vec3::new(0.0, 0.02, 0.0),
+
+                //     // rotation: Quat::from_rotation_x(FRAC_PI_2),
+                //     rotation: Quat::from_axis_angle(Vec3::Y, consts::FRAC_PI_2),
+                //     ..Default::default()
+                // },
+                transform: Transform::from_xyz(0.1, 0.015, 0.0)
+                    .looking_at(Vec3::new(0.1, -1.0, 0.0), -Vec3::X),
+                ..Default::default()
+            })
+        ],
     ));
 }
 
