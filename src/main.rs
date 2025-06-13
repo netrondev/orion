@@ -28,11 +28,11 @@ fn main() {
     let audio_buffer = mic::AudioBuffer(Arc::new(Mutex::new(Vec::new())));
 
     App::new()
-        .insert_resource(AmbientLight {
-            color: Color::WHITE,
-            brightness: 1.0 / 5.0f32,
-            ..default()
-        })
+        // .insert_resource(AmbientLight {
+        //     color: Color::WHITE,
+        //     brightness: 1.0 / 5.0f32,
+        //     ..default()
+        // })
         // PLUGINS
         .add_plugins(DefaultPlugins.set(AssetPlugin {
             file_path: "/home/rouan/work/orion/assets".to_string(),
@@ -81,6 +81,15 @@ fn main() {
         .run();
 }
 
+pub fn hot_reload_system<T: Component>(
+    commands: &mut Commands,
+    mut hot_reloaded: Query<Entity, With<T>>,
+) {
+    for entity in hot_reloaded.iter_mut() {
+        &commands.entity(entity).despawn();
+    }
+}
+
 #[derive(Component, Debug)]
 struct Key {
     key_val: String,
@@ -103,15 +112,21 @@ fn setup(
     mut standard_materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
-        previous_setup: Query<Entity, With<Key>>,
-
+    hot_reload_keys: Query<Entity, With<Key>>,
+    hot_reload_camera: Query<Entity, With<Camera3d>>,
 ) {
 
-    for entity in previous_setup.iter() {
-        cmds.entity(entity).despawn();
-    }
+    hot_reload_system(&mut cmds, hot_reload_keys);
+    hot_reload_system(&mut cmds, hot_reload_camera);
+    
 
     let mid = -6.3;   
+
+    cmds.spawn((
+        Camera3d::default(),
+        Msaa::Sample4,
+        Transform::from_xyz(8., 5., mid).looking_at(Vec3::new(0., 0., mid), Vec3::Y),
+    ));
 
     // light
     cmds.spawn((
@@ -119,13 +134,7 @@ fn setup(
         Transform::from_xyz(0.0, 6.0, mid)
     ));
 
-    //Camera
-    cmds.spawn((
-        Camera3d::default(),
-        Msaa::Sample4,
-        Transform::from_xyz(8., 5., mid).looking_at(Vec3::new(0., 0., mid), Vec3::Y)
-    ));
-
+    
     let pos: Vec3 = Vec3::new(0., 0., 0.);
 
     let mut black_key: Handle<Mesh> = asset_server.load(GltfAssetLabel::Primitive { mesh: 0, primitive: 0 }.from_asset("models/black_key.gltf"));
