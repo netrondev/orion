@@ -144,11 +144,7 @@ impl Key {
     ) {
         let font: Handle<TextMeshFont> = asset_server.load("fonts/FiraSans-Medium.ttf");
 
-        let color = match self.key_type {
-            NoteType::White => Color::from(tailwind::NEUTRAL_300),
-            NoteType::Black => Color::from(tailwind::NEUTRAL_800),
-        };
-        let mat = standard_materials.add(color);
+        let mat = standard_materials.add(self.get_key_colour());
         let mesh = Self::get_mesh(self.key_in_octal, asset_server);
 
         let pos: Vec3 = Vec3::new(0.0, self.key_height, 0.0);
