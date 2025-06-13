@@ -1,4 +1,4 @@
-use crate::hot_reload_system;
+use crate::hot_despawn;
 use bevy::{color::palettes::tailwind, prelude::*};
 use bevy_simple_subsecond_system::hot;
 use bevy_text_mesh::{
@@ -17,7 +17,7 @@ pub fn create_gizmo(
     prev_setup: Query<Entity, With<GizmoArm>>,
     asset_server: Res<AssetServer>,
 ) {
-    hot_reload_system(&mut commands, prev_setup);
+    hot_despawn(&mut commands, prev_setup);
 
     let longarm = 2.0;
     let diam = 0.05;
